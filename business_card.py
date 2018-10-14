@@ -39,7 +39,7 @@ class ContactInfo():
             self.parsed_data[fragment.datatype] = None
 
         # if we couldn't read the file, return with default vals
-        if not lines:
+        if not self.lines:
             return
         else:
             # loop through data and parse info
@@ -52,26 +52,26 @@ class ContactInfo():
     def getName(self):
         """ Returns the full name of an individual(e.g. John Smith, Susan Malick)."""
 
-        if not 'name' in self.data:
+        if not 'name' in self.parsed_data:
             return None
         else:
-            return self.data['name']
+            return self.parsed_data['name']
 
     def getPhoneNumber(self):
         """ Returns the phone number formatted as a sequence of digits."""
 
-        if not 'phone' in self.data:
+        if not 'phone' in self.parsed_data:
             return None
         else:
-            return self.data['phone']
+            return self.parsed_data['phone']
 
     def getEmailAddress(self):
         """ Returns the email address."""
 
-        if not 'email' in self.data:
+        if not 'email' in self.parsed_data:
             return None
         else:
-            return self.data['email']
+            return self.parsed_data['email']
 
 
 class ContactFragment(abc.ABC):
@@ -83,7 +83,7 @@ class ContactFragment(abc.ABC):
         self.datatype = ''
         self.data = None
 
-    def detect(line):
+    def detect(self, line):
         """ Detects whether line contains a fragment of this type.
 
         Args:
@@ -94,7 +94,7 @@ class ContactFragment(abc.ABC):
         """
         pass
 
-    def parse(line):
+    def parse(self, line):
         """ Parses the line and puts it into the format specified in this
             function. Assumes self.detect has returned true.
 
@@ -113,8 +113,10 @@ class Name(ContactFragment):
     def __init__(self):
         self.datatype = 'name'
         self.data = None
+        # define the regex pattern to test
+        self.pattern = "^(?P<first_name>\w)+ (?P<middle_name>\w?)+ (?P<last_name>\w)+$"
 
-    def detect(line):
+    def detect(self, line):
         """ Detects whether `line` contains a name as defined by self.pattern.
 
         Args:
@@ -126,15 +128,12 @@ class Name(ContactFragment):
         # delete leading and trailing whitespace
         line.strip()
 
-        # define the regex pattern to test
-        pattern = "^(?P<first_name>\w) (?P<middle_name>\w?) (?P<last_name>\w)$"
-
         # store a match if it exists, else store None
-        self.match = re.match(pattern, line)
+        self.match = re.match(self.pattern, line)
 
         return self.match
 
-    def parse(line):
+    def parse(self, line):
         """ Parses the line and puts it into the format specified in this
         function. Assumes self.detect has returned true.
 
@@ -166,6 +165,8 @@ class Name(ContactFragment):
             else:
                 self.data = "{0} {1}".format(first_name, last_name)
 
+            return self.data
+
 
 class Email(ContactFragment):
     """ An individual's email address."""
@@ -174,9 +175,9 @@ class Email(ContactFragment):
         self.datatype = 'email'
         self.data = None
         # the regex pattern to test
-        self.pattern = "^(?P<prefix>\w)@(?P<domain>\w)\.(?P<suffix>\w)$"
+        self.pattern = "^(?P<prefix>\w+)@(?P<domain>\w+)\.(?P<suffix>\w+)$"
 
-    def detect(line):
+    def detect(self, line):
         """ Detects whether `line` contains an email as defined by self.pattern.
 
         Args:
@@ -189,11 +190,11 @@ class Email(ContactFragment):
         line.strip()
 
         # store a match if it exists, else store None
-        self.match = re.match(pattern, line)
+        self.match = re.match(self.pattern, line)
 
         return self.match
 
-    def parse(line):
+    def parse(self, line):
         """ Parses the line and puts it into the format specified in this
         function. Assumes self.detect has returned true.
 
@@ -216,6 +217,8 @@ class Email(ContactFragment):
             # compile the email address
             self.data = "{0}@{1}.{2}".format(prefix, domain, suffix)
 
+            return self.data
+
 
 class Phone(ContactFragment):
     """ An individual's phone number."""
@@ -224,9 +227,9 @@ class Phone(ContactFragment):
         self.datatype = 'phone'
         self.data = None
         # the regex pattern to test
-        self.pattern = "^(?P<country_code>\+\d{0,3})?\(?(?P<area_code>\d{3})\)?-?(?P<prefix>\d{3})-?(?P<suffix>\d{4})$"
+        self.pattern = "^(?P<country_code>\+\d{0,3})?\s*\(?(?P<area_code>\d{3})\)?\s*-?(?P<prefix>\d{3})-?(?P<suffix>\d{4})$"
 
-    def detect(line):
+    def detect(self, line):
         """ Detects whether `line` contains a phone number as defined by self.pattern.
 
         Args:
@@ -243,7 +246,7 @@ class Phone(ContactFragment):
 
         return self.match
 
-    def parse(line):
+    def parse(self, line):
         """ Parses the line and puts it into the format specified in this
         function. Assumes self.detect has returned true.
 
@@ -256,11 +259,15 @@ class Phone(ContactFragment):
         # check for an existing match
         if not self.match:
             raise ValueError("""Cannot parse {0}! The requested data was not
-                             found in this line.""".format(datatype))
+                             found in this line.""".format(self.datatype))
         else:
             # if we have a match, unpack data for formatting
             try:
                 country_code = self.match.group('country_code')
+                if not country_code:
+                    country_code = ''
+                else:
+                    country_code = country_code.replace('+', '')
             except:
                 country_code = ''
             area_code = self.match.group('area_code')
