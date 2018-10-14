@@ -1,5 +1,6 @@
 import re
 import abc
+from email.utils import parseaddr
 
 
 class BusinessCardParser():
@@ -114,7 +115,17 @@ class Name(ContactFragment):
         self.datatype = 'name'
         self.data = None
         # define the regex pattern to test
-        self.pattern = "^(?P<first_name>\w)+ (?P<middle_name>\w?)+ (?P<last_name>\w)+$"
+        self.pattern = "^(\w+)\s+(\w+\.?)(\s+\w+)?$"
+        self.match = None
+        self.data = None
+        self.common_names = set()
+
+        # load a list of common English names for additional heuristics
+        with open('names.txt', 'r') as fid:
+            lines = fid.readlines()
+            for line in lines:
+                fragments = line.split('\n')
+                self.common_names.add(fragments[0])
 
     def detect(self, line):
         """ Detects whether `line` contains a name as defined by self.pattern.
@@ -131,6 +142,12 @@ class Name(ContactFragment):
         # store a match if it exists, else store None
         self.match = re.match(self.pattern, line)
 
+        # check for a match
+        if self.match:
+            # check if the first name is a common name
+            if not self.match.group(1) in self.common_names:
+                self.match = None
+
         return self.match
 
     def parse(self, line):
@@ -146,17 +163,17 @@ class Name(ContactFragment):
         # check for an existing match
         if not self.match:
             raise ValueError("""Cannot parse {0}! The requested data was not
-                             found in this line.""".format(datatype))
+                             found in this line.""".format(self.datatype))
         else:
-            # if we have a match, unpack data for formatting
-            first_name = self.match.group('first_name')
-            last_name = self.match.group('last_name')
-
-            # check to see if we've got a middle name
-            try:
-                middle_name = self.match.group('middle_name')
-            except:
-                middle_name = ''
+            # first see if we have a FirstName LastName match
+            first_name = self.match.group(1)
+            if self.match.group(3) == None:
+                last_name = self.match.group(2)
+                middle_name = None
+            else:
+                # else we have a FirstName MiddleName LastName Match
+                middle_name = self.match.group(2)
+                last_name = self.match.group(3).strip()
 
             # compile the names
             if middle_name:
@@ -175,7 +192,9 @@ class Email(ContactFragment):
         self.datatype = 'email'
         self.data = None
         # the regex pattern to test
-        self.pattern = "^(?P<prefix>\w+)@(?P<domain>\w+)\.(?P<suffix>\w+)$"
+        self.pattern = "^(?P<prefix>.+)@(?P<domain>\w+)\.(?P<suffix>\w+)$"
+        self.match = None
+        self.data = None
 
     def detect(self, line):
         """ Detects whether `line` contains an email as defined by self.pattern.
@@ -228,6 +247,8 @@ class Phone(ContactFragment):
         self.data = None
         # the regex pattern to test
         self.pattern = "^(?P<country_code>\+\d{0,3})?\s*\(?(?P<area_code>\d{3})\)?\s*-?(?P<prefix>\d{3})-?(?P<suffix>\d{4})$"
+        self.match = None
+        self.data = None
 
     def detect(self, line):
         """ Detects whether `line` contains a phone number as defined by self.pattern.

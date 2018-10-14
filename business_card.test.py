@@ -1,13 +1,68 @@
 import unittest
 import business_card
 
-# filepath = "business_cards\\test1.txt"
-# parser = business_card.BusinessCardParser()
-# contact = parser.getContactInfo(filepath)
 
-# print(contact.getName())
-# print(contact.getEmailAddress())
-# print(contact.getPhoneNumber())
+class IntTest1(unittest.TestCase):
+    """ Tests whether BusinessParser correctly reads test1.txt. """
+
+    def setUp(self):
+        # define the filepath
+        self.filepath = "business_cards\\test1.txt"
+
+        # init the parser
+        self.parser = business_card.BusinessCardParser()
+
+        # run
+        self.contact = self.parser.getContactInfo(self.filepath)
+
+    def test_correct_fields(self):
+        self.assertEqual(self.contact.getName(), "Mike Smith")
+        self.assertEqual(
+            self.contact.getEmailAddress(),
+            "msmith@asymmetrik.com")
+        self.assertEqual(self.contact.getPhoneNumber(), "4105551234")
+
+
+class IntTest2(unittest.TestCase):
+    """ Tests whether BusinessParser correctly reads test2.txt. """
+
+    def setUp(self):
+        # define the filepath
+        self.filepath = "business_cards\\test2.txt"
+
+        # init the parser
+        self.parser = business_card.BusinessCardParser()
+
+        # run
+        self.contact = self.parser.getContactInfo(self.filepath)
+
+    def test_correct_fields(self):
+        self.assertEqual(self.contact.getName(), "Lisa Haung")
+        self.assertEqual(
+            self.contact.getEmailAddress(),
+            "lisa.haung@foobartech.com")
+        self.assertEqual(self.contact.getPhoneNumber(), "4105551234")
+
+
+class IntTest3(unittest.TestCase):
+    """ Tests whether BusinessParser correctly reads test3.txt. """
+
+    def setUp(self):
+        # define the filepath
+        self.filepath = "business_cards\\test3.txt"
+
+        # init the parser
+        self.parser = business_card.BusinessCardParser()
+
+        # run
+        self.contact = self.parser.getContactInfo(self.filepath)
+
+    def test_correct_fields(self):
+        self.assertEqual(self.contact.getName(), "Arthur Wilson")
+        self.assertEqual(
+            self.contact.getEmailAddress(),
+            "awilson@abctech.com")
+        self.assertEqual(self.contact.getPhoneNumber(), "17035551259")
 
 
 class TestEmail(unittest.TestCase):
@@ -84,6 +139,40 @@ class TestPhone(unittest.TestCase):
                 self.valid_numbers, self.valid_numbers_display):
             self.phone.detect(number)
             self.assertEqual(self.phone.parse(number), display)
+
+
+class TestName(unittest.TestCase):
+    """ Tests whether the name regex is working properly. """
+
+    def setUp(self):
+        # create a name fragment
+        self.name = business_card.Name()
+
+        # list valid phone name
+        self.valid_names = ["Jim Bob", "Mikhail Yakhnis",
+                            "Nikola Tesla", "Elon Musk", "Stephen A. Smith",
+                            "Frederick Delano Roosevelt"]
+
+        # list invalid names
+        self.invalid_names = ["Jim Bob Yes Siree", "Hank A.A. Aaron", "Siri",
+                              "u.u.u.u.u"]
+
+    def test_name_regex(self):
+        for entry in self.valid_names:
+            self.assertRegex(entry, self.name.pattern)
+        for entry in self.invalid_names:
+            self.assertNotRegex(entry, self.name.pattern)
+
+    def test_name_detect(self):
+        for entry in self.valid_names:
+            self.assertTrue(self.name.detect(entry))
+        for entry in self.invalid_names:
+            self.assertFalse(self.name.detect(entry))
+
+    def test_name_parse(self):
+        for entry in self.valid_names:
+            self.name.detect(entry)
+            self.assertEqual(self.name.parse(entry), entry)
 
 
 if __name__ == "__main__":
