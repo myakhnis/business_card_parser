@@ -1,4 +1,4 @@
-# business_card.py
+# Business Card Parser
 
 A class used to parse the text resulting from OCR transcoding of a business card. 
 
