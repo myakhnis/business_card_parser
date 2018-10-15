@@ -119,26 +119,30 @@ class TestPhone(unittest.TestCase):
 
         # list invalid phone numbers
         self.invalid_numbers = [
-            "(222) 9998-8888", "+78054 987-654-3211", "456-7898",
-            "--222---888-9999"]
+            "(222) 9998-8888", "456-7898", "--222---888-9999"]
 
     def test_phone_regex(self):
         for number in self.valid_numbers:
-            self.assertRegex(number, self.phone.pattern)
+            phone = business_card.Phone()
+            self.assertRegex(number, phone.pattern)
         for number in self.invalid_numbers:
-            self.assertNotRegex(number, self.phone.pattern)
+            phone = business_card.Phone()
+            self.assertNotRegex(number, phone.pattern)
 
     def test_phone_detect(self):
         for number in self.valid_numbers:
-            self.assertTrue(self.phone.detect(number))
+            phone = business_card.Phone()
+            self.assertTrue(phone.detect(number))
         for number in self.invalid_numbers:
-            self.assertFalse(self.phone.detect(number))
+            phone = business_card.Phone()
+            self.assertFalse(phone.detect(number))
 
     def test_phone_parse(self):
         for number, display in zip(
                 self.valid_numbers, self.valid_numbers_display):
-            self.phone.detect(number)
-            self.assertEqual(self.phone.parse(number), display)
+            phone = business_card.Phone()
+            phone.detect(number)
+            self.assertEqual(phone.parse(number), display)
 
 
 class TestName(unittest.TestCase):

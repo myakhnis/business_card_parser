@@ -28,8 +28,11 @@ class ContactInfo():
         self.document = document
 
         # read the document and store data
+        self.lines = []
         with open(document, 'r') as fid:
-            self.lines = fid.readlines()
+            for line in fid.readlines():
+                fragments = line.split("\n")
+                self.lines.append(fragments[0])
 
         # register contact info fragments and initialize
         self.fragments = [Name(), Phone(), Email()]
@@ -192,7 +195,7 @@ class Email(ContactFragment):
         self.datatype = 'email'
         self.data = None
         # the regex pattern to test
-        self.pattern = "^(?P<prefix>.+)@(?P<domain>\w+)\.(?P<suffix>\w+)$"
+        self.pattern = "^(?P<prefix>\w+\.?\w+)@(?P<domain>\w+)\.(?P<suffix>\w+)$"
         self.match = None
         self.data = None
 
@@ -246,7 +249,7 @@ class Phone(ContactFragment):
         self.datatype = 'phone'
         self.data = None
         # the regex pattern to test
-        self.pattern = "^(?P<country_code>\+\d{0,3})?\s*\(?(?P<area_code>\d{3})\)?\s*-?(?P<prefix>\d{3})-?(?P<suffix>\d{4})$"
+        self.pattern = "^(\w*:?\s)?(?P<country_code>\+\d{1,3})?\s*\(?(?P<area_code>\d{3})\)?\s*-?(?P<prefix>\d{3})-?(?P<suffix>\d{4})$"
         self.match = None
         self.data = None
 
@@ -262,8 +265,10 @@ class Phone(ContactFragment):
         # delete leading and trailing whitespace
         line.strip()
 
-        # store a match if it exists, else store None
-        self.match = re.match(self.pattern, line)
+        # only store a new match
+        if not self.match:
+            # store a match if it exists, else store None
+            self.match = re.match(self.pattern, line)
 
         return self.match
 
