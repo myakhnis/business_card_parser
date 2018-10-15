@@ -1,6 +1,5 @@
 import re
 import abc
-from email.utils import parseaddr
 
 
 class BusinessCardParser():
